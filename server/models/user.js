@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const validator = require('validator');
 const jwt = require('jsonwebtoken');
 const _ = require('lodash');
+const bcrypt = require('bcryptjs');
 
 // this is what we need in order to tack on custom methods (such as generateAuthToken). we can't add methods on to user so we need to switch how we generate the model
 var UserSchema = new mongoose.Schema({
@@ -87,6 +88,25 @@ UserSchema.statics.findByToken = function (token) {
   });
   // for the first time we're going to query our nested object properties
 }
+
+// Before we ever save document to the database, we want to make some changes to it
+// Need to use regular function, not arrow function for this keyword
+// Have to call next. If you don't provide it, middleware will not complete and program will crash
+UserSchema.pre('save', function(next) {
+  var user = this;
+
+ if (user.isModified('password')) {
+  bcrypt.genSalt(10, (err, salt) => {
+    bcrypt.hash(user.password, salt, (err, hash) => {
+      user.password = hash;
+      next();
+    })
+  });
+ } else {
+  next();
+ }
+  // returns true or false
+})
 
 var User = mongoose.model('User', UserSchema);
 
