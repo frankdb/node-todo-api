@@ -59,6 +59,35 @@ UserSchema.methods.generateAuthToken = function () {
   })
 }
 
+// .statics - Everything you add on to it turns into a model method as opposed to an instance method
+// will take argument - token
+UserSchema.statics.findByToken = function (token) {
+  var User = this;
+  // instance methods get called with the individual document
+  // model methods get called with the model as the this binding
+  var decoded;
+  // why undefined variable? jwt.verify will throw an error if anything goes wrong (secret doesn't match). we want to be able to catch this error
+
+  try {
+    decoded = jwt.verify(token, 'abc123');
+  } catch (e) {
+    // return new Promise((resolve, reject) => {
+    //   reject();
+    // })
+    return Promise.reject();
+  }
+  // in catch block, return a promise that will always reject. if this code runs, we never want return User.findOne to run
+  // try-catch block. if any errors happens in the try block the code automatically stops execution and moves into the catch block, lets you run some code there, then it continues on with your program
+
+  return User.findOne({
+    _id: decoded._id,
+    'tokens.token': token,
+    'tokens.access': 'auth'
+    // to query a nested document, wrap our value in quotes
+  });
+  // for the first time we're going to query our nested object properties
+}
+
 var User = mongoose.model('User', UserSchema);
 
 module.exports = { User }
