@@ -89,6 +89,27 @@ UserSchema.statics.findByToken = function (token) {
   // for the first time we're going to query our nested object properties
 }
 
+// finds user using email and checks if password is correct
+UserSchema.statics.findByCredentials = function (email, password) {
+  var User = this;
+
+  return User.findOne({email}).then((user) => {
+    if(!user) {
+      return Promise.reject();
+    }
+
+    return new Promise((resolve, reject) => {
+      bcrypt.compare(password, user.password, (err, res) => {
+        if (res) {
+          resolve(user);
+        } else {
+          reject();
+        }
+      })
+    })
+  });
+};
+
 // Before we ever save document to the database, we want to make some changes to it
 // Need to use regular function, not arrow function for this keyword
 // Have to call next. If you don't provide it, middleware will not complete and program will crash
